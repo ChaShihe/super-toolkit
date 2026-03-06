@@ -14,6 +14,9 @@ import hashlib
 import json
 from urllib.parse import urlencode
 import streamlit as st
+import base64
+import qrcode
+from io import BytesIO
 
 load_dotenv()
 
@@ -386,6 +389,37 @@ def get_joke(query: str) -> str:
     except:
         return "获取笑话失败，请稍后重试"
 
+def generate_qrcode(text: str) -> str:
+    """
+    使用 qrcode 库在本地生成二维码，并显示在 Streamlit 中
+    """
+    print(f"[二维码调试] 收到输入: {text}")
+    if not text or text.strip() == "":
+        return "请输入要生成二维码的内容，例如：https://example.com 或 我的联系方式"
+    
+    try:
+        # 生成二维码
+        qr = qrcode.QRCode(
+            version=1,
+            box_size=10,
+            border=5
+        )
+        qr.add_data(text.strip())
+        qr.make(fit=True)
+        
+        # 创建图片
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # 将图片转换为 base64 编码，以便在 Markdown 中显示
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_base64 = base64.b64encode(buffered.getvalue()).decode()
+        
+        # 返回 base64 图片的 Markdown 格式
+        return f"![二维码](data:image/png;base64,{img_base64})\n\n您的内容：{text}"
+    except Exception as e:
+        return f"二维码生成失败：{str(e)}"
+
 # ========== 工具列表 ==========
 tools = [
     Tool(name="weather_query", func=get_weather, description="输入城市名，查询实时天气，例如：北京天气"),
@@ -405,6 +439,12 @@ tools = [
         name="tell_joke", 
         func=get_joke, 
         description="获取随机笑话，输入‘讲个笑话’或‘笑话’"
+    ),
+    Tool(
+        name="qrcode_generator", 
+        func=generate_qrcode, 
+        description="生成二维码，输入任意文本（如网址、联系方式、文字），返回对应的二维码图片。例如：生成二维码 https://example.com",
+        return_direct=True
     ),
 ]
 
