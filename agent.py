@@ -369,6 +369,23 @@ def track_express(query: str) -> str:
     except Exception as e:
         return f"快递查询出错: {str(e)}"
 
+def get_joke(query: str) -> str:
+    """随机返回一条笑话"""
+    api_key = get_secret("TIAN_API_KEY")
+    if not api_key:
+        return "请先在 .env 中配置天行数据 API 密钥"
+    url = f"http://api.tianapi.com/joke/index?key={api_key}&num=1"
+    try:
+        resp = requests.get(url, timeout=5)
+        data = resp.json()
+        if data["code"] == 200:
+            joke = data["newslist"][0]["content"]
+            return f"😄 {joke}"
+        else:
+            return "笑话接口暂时无法使用，稍后再试吧"
+    except:
+        return "获取笑话失败，请稍后重试"
+
 # ========== 工具列表 ==========
 tools = [
     Tool(name="weather_query", func=get_weather, description="输入城市名，查询实时天气，例如：北京天气"),
@@ -383,6 +400,11 @@ tools = [
         name="express_tracking", 
         func=track_express, 
         description="快递查询，输入快递单号，可以指定快递公司名称，例如：查快递 12345678 或 顺丰SF1234567890"
+    ),
+    Tool(
+        name="tell_joke", 
+        func=get_joke, 
+        description="获取随机笑话，输入‘讲个笑话’或‘笑话’"
     ),
 ]
 
